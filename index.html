@@ -24,45 +24,43 @@
         <div id="status">Desconectado</div>
     </div>
 
-    <script>
-        // --- CONFIGURACIÓN DE ADAFRUIT ---
-        const MQTT_HOST = "io.adafruit.com";
-        const MQTT_PORT = 443; // Puerto seguro para WebSockets
-        const MQTT_USER = "AmielTariq";
-        const MQTT_PASS = "aio_KhoG62vxJx6cJGlCgvQdWPki7T3o";
-        const MQTT_FEED = "AmielTariq/feeds/distancia";
+    // --- CONFIGURACIÓN DE ADAFRUIT ---
+const MQTT_HOST = "io.adafruit.com";
+const MQTT_PORT = 443; 
+const MQTT_USER = "AmielTariq";
+const MQTT_PASS = "aio_KhoG62vxJx6cJGlCgvQdWPki7T3o";
+// En la web, el feed debe ir con el formato: usuario/feeds/nombre-del-feed
+const MQTT_FEED = "AmielTariq/feeds/distancia";
 
-        // Crear instancia del cliente
-        const clientId = "web_client_" + Math.random().toString(16).substr(2, 8);
-        const client = new Paho.MQTT.Client(MQTT_HOST, MQTT_PORT, clientId);
+const clientId = "web_client_" + Math.random().toString(16).substr(2, 8);
+const client = new Paho.MQTT.Client(MQTT_HOST, MQTT_PORT, clientId);
 
-        // Configurar callbacks
-        client.onConnectionLost = (responseObject) => {
-            document.getElementById("status").innerText = "Conexión perdida";
-            document.getElementById("status").classList.remove("online");
-        };
+client.onConnectionLost = (responseObject) => {
+    document.getElementById("status").innerText = "Conexión perdida: " + responseObject.errorMessage;
+    document.getElementById("status").classList.remove("online");
+};
 
-        client.onMessageArrived = (message) => {
-            console.log("Dato recibido:", message.payloadString);
-            document.getElementById("valor").innerText = message.payloadString;
-        };
+client.onMessageArrived = (message) => {
+    console.log("Dato recibido:", message.payloadString);
+    document.getElementById("valor").innerText = message.payloadString;
+};
 
-        // Conectar
-        const options = {
-            useSSL: true,
-            userName: MQTT_USER,
-            password: MQTT_PASS,
-            onSuccess: () => {
-                document.getElementById("status").innerText = "En Línea (Adafruit Cloud)";
-                document.getElementById("status").classList.add("online");
-                client.subscribe(MQTT_FEED);
-            },
-            onFailure: (err) => {
-                document.getElementById("status").innerText = "Error: " + err.errorMessage;
-            }
-        };
+const options = {
+    useSSL: true,
+    userName: MQTT_USER,
+    password: MQTT_PASS,
+    keepAliveInterval: 30,
+    reconnect: true,
+    onSuccess: () => {
+        document.getElementById("status").innerText = "En Línea (Adafruit Cloud)";
+        document.getElementById("status").classList.add("online");
+        client.subscribe(MQTT_FEED);
+    },
+    onFailure: (err) => {
+        // Si el error persiste, limpia el caché de tu navegador
+        document.getElementById("status").innerText = "Error de Auth: Revisa Usuario/Key";
+        console.error("Detalle del error:", err);
+    }
+};
 
-        client.connect(options);
-    </script>
-</body>
-</html>
+client.connect(options);
