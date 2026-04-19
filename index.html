@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Distancia IoT</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: #1e1e1e; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; width: 300px; }
+        h1 { font-size: 1.2rem; color: #bb86fc; margin-bottom: 1rem; }
+        #valor { font-size: 4rem; font-weight: bold; color: #03dac6; margin: 10px 0; }
+        .unit { font-size: 1.5rem; color: #888; }
+        #status { font-size: 0.8rem; margin-top: 15px; color: #cf6679; }
+        .online { color: #03dac6 !important; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>DISTANCIA EN TIEMPO REAL</h1>
+        <div id="valor">--</div>
+        <span class="unit">cm</span>
+        <div id="status">Desconectado</div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN DE ADAFRUIT ---
+        const MQTT_HOST = "io.adafruit.com";
+        const MQTT_PORT = 443; // Puerto seguro para WebSockets
+        const MQTT_USER = "AmielTariq";
+        const MQTT_PASS = "aio_KhoG62vxJx6cJGlCgvQdWPki7T3o";
+        const MQTT_FEED = "AmielTariq/feeds/distancia";
+
+        // Crear instancia del cliente
+        const clientId = "web_client_" + Math.random().toString(16).substr(2, 8);
+        const client = new Paho.MQTT.Client(MQTT_HOST, MQTT_PORT, clientId);
+
+        // Configurar callbacks
+        client.onConnectionLost = (responseObject) => {
+            document.getElementById("status").innerText = "Conexión perdida";
+            document.getElementById("status").classList.remove("online");
+        };
+
+        client.onMessageArrived = (message) => {
+            console.log("Dato recibido:", message.payloadString);
+            document.getElementById("valor").innerText = message.payloadString;
+        };
+
+        // Conectar
+        const options = {
+            useSSL: true,
+            userName: MQTT_USER,
+            password: MQTT_PASS,
+            onSuccess: () => {
+                document.getElementById("status").innerText = "En Línea (Adafruit Cloud)";
+                document.getElementById("status").classList.add("online");
+                client.subscribe(MQTT_FEED);
+            },
+            onFailure: (err) => {
+                document.getElementById("status").innerText = "Error: " + err.errorMessage;
+            }
+        };
+
+        client.connect(options);
+    </script>
+</body>
+</html>
